@@ -27,7 +27,14 @@ for link in soup.find_all('a'):
 #get the report ID from end of URL, make an integer for the loop and print some info...
 kid = soup_out[3]
 lastreportID = int(kid[-6:])
-print "The most recent hazard report ID is ID %r at link %r" % (lastreportID, soup_out[3])  	
+print "The most recent hazard report ID is ID %r at link %r" % (lastreportID, soup_out[3])  
+
+#open files to print to once, outside of loop
+#ee ex16 for making csv 'a' append 'wb' open as empty file and start writing
+target = open('hazard_reports1.csv', 'wb')
+b = csv.writer(target)
+data = ['currentreportID', 'report_url', 'report_title']
+b.writerow(data)
 
 #while loop to keep looping until we reach the ID of the last reported hazard
 while counter < lastreportID:
@@ -44,30 +51,15 @@ while counter < lastreportID:
 	print 'title:', title('h1').text()
 	print currentreportid
 
-	#this works, using ex 16 from learn python the hard way
-	#'a' creates/opens the file and appends to existing data
-	#\n moves to a new line
+	#add to report titles csv
 	report_title = title('h1').text()
-	target = open('Report Titles.txt','a')
-	target.write(currentreportid)
-	target.write(', ')
-	target.write(report_url)
-	target.write(', ')
-	target.write(report_title)
-	target.write('\n')
-
-#why is this putting a comma after each character?
-	with open('Hazard Reports.csv', 'a') as fp:
-		a = csv.writer(fp, quotechar="'", quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
-		data = [currentreportid, report_title]
-		a.writerows(data)
-
+	data = [currentreportid, report_url, report_title]
+	print data
+	b.writerow(data)
 
 	#add time break between reports, 0.5s for now
 	time.sleep(0.5)
-	
+
 	#when it's time to move on to the next report
 	counter += 1
 
-#summary = open('Report Titles.txt')
-#print summary.read()
