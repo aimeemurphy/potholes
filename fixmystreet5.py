@@ -3,6 +3,7 @@ import csv
 from bs4 import BeautifulSoup
 from pyquery import PyQuery as pq
 from HTMLParser import HTMLParser
+import time
 
 #compile url of url start + counter padded with zeros using zfill
 print "Enter report ID to start from: \n Note: The first ID is 10, or start from the most recent hazardid already obtained"
@@ -62,6 +63,9 @@ while counter < lastreportID:
 		a.writerows(data)
 
 
+	#add time break between reports, 0.5s for now
+	time.sleep(0.5)
+	
 	#when it's time to move on to the next report
 	counter += 1
 
