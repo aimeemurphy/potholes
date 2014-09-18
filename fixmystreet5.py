@@ -5,6 +5,7 @@ from pyquery import PyQuery as pq
 from HTMLParser import HTMLParser
 import time
 import re
+import sys
 
 #compile url of url start + counter padded with zeros using zfill
 print "Enter report ID to start from: \n Note: The first ID is 10, or start from the most recent hazardid already obtained"
@@ -33,9 +34,9 @@ print "The most recent hazard report ID is ID %r at link %r" % (lastreportID, so
 #open files to print to once, outside of loop
 #ee ex16 for making csv 'a' append 'wb' open as empty file and start writing
 target = open('hazard_reports1.csv', 'wb')
-b = csv.writer(target)
+update_csv = csv.writer(target)
 data = ['currentreportID', 'report_url', 'report_title', 'council', 'description']
-b.writerow(data)
+update_csv.writerow(data)
 
 #while loop to keep looping until we reach the ID of the last reported hazard
 while counter < lastreportID:
@@ -57,12 +58,12 @@ while counter < lastreportID:
 	council = council.replace("Sent to ", "")
 	print council
 	#find where digits start appearing, i.e., the time that we want to cut off
+	#finditer should find the first instance, findall would find them all
 	x = re.search("\d", council)
 	print x
 	p = re.compile("\d")
 	for m in p.finditer(council):
 		a = m.start()
-		print a
 		council = council[:a-1]
 	print council
 
@@ -87,18 +88,48 @@ while counter < lastreportID:
 	day_of_report = date_of_report[:3]
 	date_of_report = date_of_report[5:]
 	q = re.compile(" Sent to")
-	for m in q.finditer(date):
+	for m in q.finditer(date_of_report):
 		a = m.start()
 		date_of_report = date_of_report[:a]
 
 	#description is easy to identify specifically through the html tags
 	description = content("div.problem-header div.moderate-display p").text()
 
+	#now to get the location of the fault. pulling lat long from the link looks to be the best way to do this
+	location = content("div.shadow-wrap ul li a.chevron").attr('href')
+	print location
+	#search the string and return from where it says lat=, then allow any 
+	#digits 0-9 or a . and stop returning when something different i.e., & is found
+	lat = re.search("lat=[0-9.]*", location)
+	#use an if statement to set lat to 0.0 if a lat wasn't found in the string
+	if lat:
+		lat = lat.group().replace("lat=", "")
+	else:
+		lat = 0.0
+	lon = re.search("lon=[0-9.-]*", location)
+	if lon:
+		lon = lon.group().replace("lon=", "")
+	else:
+		lon = 0.0
+	print lat, lon
+
+	sys.exit()
+	for m in q.finditer(location):
+		a_1 = m.start()
+	p = re.compile("\\&")
+	for n in p.finditer(location):
+		b_1 = n.start()
+	print "index of lat= %r" % (a_1)
+	print "index of &= %r" % (b_1)
+	latitude = location[a_1:b_1]
+	print latitude
+	print location[a_1]
+	print location[b_1]
 
 
 	data = [currentreportid, report_url, report_title, category, time_of_report, day_of_report, date_of_report, user, council, description]
 	#print data
-	b.writerow(data)
+	update_csv.writerow(data)
 
 	#add time break between reports, 0.5s for now
 	time.sleep(0.5)
