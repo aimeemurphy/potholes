@@ -67,8 +67,8 @@ while counter < lastreportID:
 	print council
 
 	#getting category, user and date!
+	#these are all within the same tag, so we use regular expressions to pick out the bits we want
 	category_user_date = content("em").text()
-	print category_user_date
 	category = category_user_date.replace("Reported in the ", "")
 	q = re.compile("category")
 	for m in q.finditer(category):
@@ -76,27 +76,27 @@ while counter < lastreportID:
 		user = category[a+9:]
 		category = category[:a-1]
 	print category
-	q = re.compile("\d\d:?\d\d")
+	print "user before chopping is %r" % (user)
+	q = re.compile("\d\d:\d\d")
 	for m in q.finditer(user):
 		a = m.start()
-		date = user[a:]
+		date_of_report = user[a:]
 		user = user[:a-4]
-	print user
-	print date
+	time_of_report = date_of_report[:5]
+	date_of_report = date_of_report[7:]
+	day_of_report = date_of_report[:3]
+	date_of_report = date_of_report[5:]
+	q = re.compile(" Sent to")
+	for m in q.finditer(date):
+		a = m.start()
+		date_of_report = date_of_report[:a]
 
-	#print "\n\n\n" + "CATEGORY:" + category
-	#print "\n\n\n" + user_date + "\n\n\n"
-	#print user_date
-
-	#category is within a <p> tag with date and text we don't want. 
-	#can use replace to replace the standard text with empty text
-	#will probably need to use "regular expressions" to look for where the date starts etc
-	#category = content()
-
+	#description is easy to identify specifically through the html tags
 	description = content("div.problem-header div.moderate-display p").text()
-	print description
 
-	data = [currentreportid, report_url, report_title, council, description]
+
+
+	data = [currentreportid, report_url, report_title, category, time_of_report, day_of_report, date_of_report, user, council, description]
 	#print data
 	b.writerow(data)
 
