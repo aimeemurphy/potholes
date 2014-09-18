@@ -54,7 +54,7 @@ while counter < lastreportID:
 	report_title = content('h1').text()
 	#searching for tag.class on the page and pulls text only, need to search text to pick out council later
 	council = content("small.council_sent_info").text()
-	council = council.replace("Sent to ", "").replace("later", "")
+	council = council.replace("Sent to ", "")
 	print council
 	#find where digits start appearing, i.e., the time that we want to cut off
 	x = re.search("\d", council)
@@ -66,6 +66,27 @@ while counter < lastreportID:
 		council = council[:a-1]
 	print council
 
+	#getting category, user and date!
+	category_user_date = content("em").text()
+	print category_user_date
+	category = category_user_date.replace("Reported in the ", "")
+	q = re.compile("category")
+	for m in q.finditer(category):
+		a = m.start()
+		user = category[a+9:]
+		category = category[:a-1]
+	print category
+	q = re.compile("\d\d:?\d\d")
+	for m in q.finditer(user):
+		a = m.start()
+		date = user[a:]
+		user = user[:a-4]
+	print user
+	print date
+
+	#print "\n\n\n" + "CATEGORY:" + category
+	#print "\n\n\n" + user_date + "\n\n\n"
+	#print user_date
 
 	#category is within a <p> tag with date and text we don't want. 
 	#can use replace to replace the standard text with empty text
@@ -76,7 +97,7 @@ while counter < lastreportID:
 	print description
 
 	data = [currentreportid, report_url, report_title, council, description]
-	print data
+	#print data
 	b.writerow(data)
 
 	#add time break between reports, 0.5s for now
@@ -84,4 +105,5 @@ while counter < lastreportID:
 
 	#when it's time to move on to the next report
 	counter += 1
+
 
