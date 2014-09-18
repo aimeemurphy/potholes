@@ -72,6 +72,7 @@ while counter < lastreportID:
 
 		#getting category, user and date!
 		#these are all within the same tag, so we use regular expressions to pick out the bits we want
+		### NEED TO PUT IN AN ERROR HANDLER WHEN USER IS NOT ANONYMOUS AND THERE ARE MORE CHARACTERS eg "By Joe"
 		category_user_date = content("em").text()
 		category = category_user_date.replace("Reported in the ", "")
 		q = re.compile("category")
@@ -86,6 +87,7 @@ while counter < lastreportID:
 			a = m.start()
 			date_of_report = user[a:]
 			user = user[:a-4]
+		user = user.replace("By ", "")
 		time_of_report = date_of_report[:5]
 		date_of_report = date_of_report[7:]
 		day_of_report = date_of_report[:3]
