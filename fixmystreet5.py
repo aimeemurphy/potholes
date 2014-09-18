@@ -51,10 +51,11 @@ while counter < lastreportID:
 
 	#.text() prints the text only, without html tags, we know h1 is the title from inspection
 	content = pq(response.content)
-
+	print report_id
 	#add to report titles csv
 	report_title = content('h1').text()
-	if report_title != "Report Not Found":
+	print report_title
+	if report_title != "Page Not Found":
 		#searching for tag.class on the page and pulls text only, need to search text to pick out council later
 		council = content("small.council_sent_info").text()
 		council = council.replace("Sent to ", "")
@@ -115,7 +116,7 @@ while counter < lastreportID:
 		else:
 			longitude = 0.0
 		print latitude, longitude
-
+		#sys.exit()
 		#work out status
 		status = content("div.content div.banner p").text()
 		print "\n\n STATUS: %r \n\n" % (status)
