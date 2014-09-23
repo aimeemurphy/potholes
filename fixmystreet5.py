@@ -33,10 +33,9 @@ print "The most recent hazard report ID is ID %r at link %r" % (lastreportID, so
 
 #open files to print to once, outside of loop
 #ee ex16 for making csv 'a' append 'wb' open as empty file and start writing
-target = open('hazard_reports1.csv', 'a')
+target = open('hazard_reports1.csv', 'wb')
 update_csv = csv.writer(target)
-#data = ['currentreportID', 'report_url', 'report_title', 'council', 'description']
-#update_csv.writerow(data)
+
 
 #while loop to keep looping until we reach the ID of the last reported hazard
 while counter < lastreportID:
@@ -72,9 +71,10 @@ while counter < lastreportID:
 
 		#getting category, user and date!
 		#these are all within the same tag, so we use regular expressions to pick out the bits we want
-		### NEED TO PUT IN AN ERROR HANDLER WHEN USER IS NOT ANONYMOUS AND THERE ARE MORE CHARACTERS eg "By Joe"
+		#the category_user_date is not the same for all records, need to work out how to deal with lack of category or inclusion of report method
 		category_user_date = content("em").text()
 		category = category_user_date.replace("Reported in the ", "")
+		user = category
 		q = re.compile("category")
 		for m in q.finditer(category):
 			a = m.start()
@@ -125,7 +125,7 @@ while counter < lastreportID:
 		print status
 
 
-		data = [report_id, report_url, report_title, category, latitude, longitude, time_of_report, day_of_report, date_of_report, user, council, description, status]
+		data = [report_id, report_url, report_title, report_method, category, latitude, longitude, time_of_report, day_of_report, date_of_report, user, council, description, status]
 		#print data
 		update_csv.writerow(data)
 		print data
