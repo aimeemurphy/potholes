@@ -8,7 +8,7 @@ import re
 import sys
 
 #compile url of url start + counter padded with zeros using zfill
-print "Enter report ID to start from: \n Note: The first ID is 10, or start from the most recent hazardid already obtained"
+print "Enter report ID to start from: \n Note: The first ID ever is 10, we have up to 420320 from World Bank, or start from the most recent hazardid already obtained"
 counter = int(raw_input())
 
 #get lastreportid by getting the url of the most recent report on main page
@@ -72,6 +72,19 @@ while counter < lastreportID:
 		#getting category, user and date!
 		#these are all within the same tag, so we use regular expressions to pick out the bits we want
 		#the category_user_date is not the same for all records, need to work out how to deal with lack of category or inclusion of report method
+		#the latest records may begin with the method of reporting, such as "via iOS", we can determine if a report contains this by searching the start of the string to decide how to split it
+		method_category_user_date = content("em").text()
+		#add if statement to decide how the line should be dealt with, needs boolean test of regexp
+		q = re.compile("Reported via")
+		if q.search(method_category_user_date) is not None:
+			print 'woohoo' 
+		else:
+			print 'boo'	
+		sys.exit()
+
+		#for m in q.finditer(method_category_user_date)
+			#put the boolean test in!
+
 		category_user_date = content("em").text()
 		category = category_user_date.replace("Reported in the ", "")
 		user = category
