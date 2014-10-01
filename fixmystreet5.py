@@ -38,7 +38,7 @@ update_csv = csv.writer(target)
 
 
 #while loop to keep looping until we reach the ID of the last reported hazard
-while counter < lastreportID:
+while counter < lastreportID+1:
 	#pad reportid with 0s up to 6 digits for making the URL
 	currentreportid= str(counter).zfill(6)
 	url = 'https://www.fixmystreet.com/report/%s' % currentreportid
@@ -67,6 +67,7 @@ while counter < lastreportID:
 		for m in p.finditer(council):
 			a = m.start()
 			council = council[:a-1]
+		print "a council.... %r" % a
 		print council
 
 		#getting category, user and date!
@@ -74,37 +75,90 @@ while counter < lastreportID:
 		#the category_user_date is not the same for all records, need to work out how to deal with lack of category or inclusion of report method
 		#the latest records may begin with the method of reporting, such as "via iOS", we can determine if a report contains this by searching the start of the string to decide how to split it
 		method_category_user_date = content("em").text()
+		category_user_date = method_category_user_date
+		#delcare outside loops
 		#add if statement to decide how the line should be dealt with, needs boolean test of regexp
 		q = re.compile("Reported via")
 		if q.search(method_category_user_date) is not None:
-			print 'woohoo' 
+			#Need to break up method and category
+			#Method will be sandwiched between "reported via" and "in the"
+			method_category_user_date = method_category_user_date.replace("Reported via ", "")
+			q = re.compile(" in the ")
+			for m in q.finditer(method_category_user_date):
+				a = m.start()
+				category_user_date = method_category_user_date[a+8:]
+				method = method_category_user_date[:a]
+
 		else:
-			print 'boo'	
-		sys.exit()
+		
+		#if it doesn't have a method, there's also a chance it doesn't have a category for older reports
+		#it's not necessary to deal with this now as i'm only scraping from jan 2014...
 
-		#for m in q.finditer(method_category_user_date)
-			#put the boolean test in!
+			#if there is only a category, user and date...
+			method = 0
+			category_user_date = category_user_date.replace("Reported in the ", "")
 
-		category_user_date = content("em").text()
-		category = category_user_date.replace("Reported in the ", "")
-		user = category
+
 		q = re.compile("category")
-		for m in q.finditer(category):
+		for m in q.finditer(category_user_date):
 			a = m.start()
-			user = category[a+9:]
-			category = category[:a-1]
-		print category
-		print "user before chopping is %r" % (user)
-		q = re.compile("\d\d:\d\d")
-		for m in q.finditer(user):
-			a = m.start()
-			date_of_report = user[a:]
-			user = user[:a-4]
-		user = user.replace("By ", "")
-		time_of_report = date_of_report[:5]
-		date_of_report = date_of_report[7:]
-		day_of_report = date_of_report[:3]
-		date_of_report = date_of_report[5:]
+			user = category_user_date[a+9:]
+			category = category_user_date[:a-1]
+		#print method
+		#print category
+		#print user
+		date_of_report = user
+		print "category a.... %r" % a 
+
+		#now take out user and date
+		#need to deal with user differently if it's anonymous, much like method...
+		q = re.compile("anonymously")
+		if q.search(user) is not None:
+			date = user.replace("anonymously at ", "")
+			user = "anonymously"
+			#have date!			
+		else:
+			user = user.replace("By ")
+			date = user
+			q = re.compile("\d\d:\d\d")
+			for m in q.finditer(user):
+				a = m.start()
+				date = user[a:]
+				user = user[:a-4]
+			#have date!
+		#should now be able to break down the dates in the same way
+		time_of_report = date[:5]
+		check_date = date[:7]
+		q = re.compile(",")
+		#older records have a comma after time
+		if q.search(check_date) is not None:
+			date = date[7:]
+		else:
+			date = date[6:]
+		print "date:...%r" % date
+
+		#reports from the last week will have only a weekday without an actual date, we will need to identify these and calculate the date
+		#older records are easier to deal with: look for a digit, up until then is day, rest is date
+		p = re.compile("\d")
+		if p.search(date) is not None:
+			p = re.compile("\d")
+			p.finditer(date)
+			b = m.start()
+			day_of_report = date[:b-1]
+			print "full date: %r" % date
+			date = date[b:]
+			print "b..... %r" % b
+			print "day: %r" % day_of_report
+
+		#day_of_report = date[:3]
+		#date_of_report = date_of_report[5:]
+		#print date_of_report
+		#print time_of_report
+		sys.exit()
+		print day_of_report
+		print date_of_report
+		print time_of_report
+		
 		q = re.compile(" Sent to")
 		for m in q.finditer(date_of_report):
 			a = m.start()
