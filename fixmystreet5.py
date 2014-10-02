@@ -6,6 +6,7 @@ from HTMLParser import HTMLParser
 import time
 import re
 import sys
+from dateutil import parser
 
 #compile url of url start + counter padded with zeros using zfill
 print "Enter report ID to start from: \n Note: The first ID ever is 10, we have up to 420320 from World Bank, or start from the most recent hazardid already obtained"
@@ -78,37 +79,45 @@ while counter < lastreportID+1:
 		category_user_date = method_category_user_date
 		#delcare outside loops
 		#add if statement to decide how the line should be dealt with, needs boolean test of regexp
-		q = re.compile("Reported via")
+		q = re.compile("category")
 		if q.search(method_category_user_date) is not None:
-			#Need to break up method and category
-			#Method will be sandwiched between "reported via" and "in the"
-			method_category_user_date = method_category_user_date.replace("Reported via ", "")
-			q = re.compile(" in the ")
-			for m in q.finditer(method_category_user_date):
-				a = m.start()
-				category_user_date = method_category_user_date[a+8:]
-				method = method_category_user_date[:a]
+
+			q = re.compile("Reported via")
+			if q.search(method_category_user_date) is not None:
+				#Need to break up method and category
+				#Method will be sandwiched between "reported via" and "in the"
+				method_category_user_date = method_category_user_date.replace("Reported via ", "")
+				q = re.compile(" in the ")
+				for m in q.finditer(method_category_user_date):
+					a = m.start()
+					category_user_date = method_category_user_date[a+8:]
+					report_method = method_category_user_date[:a]
+
+			else:
+			
+			#if it doesn't have a method, there's also a chance it doesn't have a category 
+
+			
+				#if there is only a category, user and date...
+				report_method = 0
+				category_user_date = category_user_date.replace("Reported in the ", "")
+
+				q = re.compile("category")
+				for m in q.finditer(category_user_date):
+					a = m.start()
+					user = category_user_date[a+9:]
+					category = category_user_date[:a-1]
+					#print method
+					#print category
+					#print user
+				date_of_report = user
+				print "category a.... %r" % a 
 
 		else:
-		
-		#if it doesn't have a method, there's also a chance it doesn't have a category for older reports
-		#it's not necessary to deal with this now as i'm only scraping from jan 2014...
+			report_method = 0
+			category = 0
+			user = method_category_user_date.replace("Reported ", "")
 
-			#if there is only a category, user and date...
-			method = 0
-			category_user_date = category_user_date.replace("Reported in the ", "")
-
-
-		q = re.compile("category")
-		for m in q.finditer(category_user_date):
-			a = m.start()
-			user = category_user_date[a+9:]
-			category = category_user_date[:a-1]
-		#print method
-		#print category
-		#print user
-		date_of_report = user
-		print "category a.... %r" % a 
 
 		#now take out user and date
 		#need to deal with user differently if it's anonymous, much like method...
@@ -118,51 +127,30 @@ while counter < lastreportID+1:
 			user = "anonymously"
 			#have date!			
 		else:
-			user = user.replace("By ")
+			user = user.replace("By ","")
 			date = user
 			q = re.compile("\d\d:\d\d")
 			for m in q.finditer(user):
 				a = m.start()
 				date = user[a:]
 				user = user[:a-4]
+		q = re.compile("\d\d\d\d")
+		for m in q.finditer(date):
+			a = m.start()
+			date = date[:a+4]
 			#have date!
 		#should now be able to break down the dates in the same way
-		time_of_report = date[:5]
-		check_date = date[:7]
-		q = re.compile(",")
-		#older records have a comma after time
-		if q.search(check_date) is not None:
-			date = date[7:]
-		else:
-			date = date[6:]
-		print "date:...%r" % date
+		#try breaking down the date and time using dateutil
+		print "date before parsing: %r" % date
+		date = parser.parse(date)
+		print date
 
-		#reports from the last week will have only a weekday without an actual date, we will need to identify these and calculate the date
-		#older records are easier to deal with: look for a digit, up until then is day, rest is date
-		p = re.compile("\d")
-		if p.search(date) is not None:
-			p = re.compile("\d")
-			p.finditer(date)
-			b = m.start()
-			day_of_report = date[:b-1]
-			print "full date: %r" % date
-			date = date[b:]
-			print "b..... %r" % b
-			print "day: %r" % day_of_report
-
-		#day_of_report = date[:3]
-		#date_of_report = date_of_report[5:]
-		#print date_of_report
-		#print time_of_report
-		sys.exit()
-		print day_of_report
-		print date_of_report
-		print time_of_report
 		
-		q = re.compile(" Sent to")
-		for m in q.finditer(date_of_report):
-			a = m.start()
-			date_of_report = date_of_report[:a]
+		#dunno what this sent to stuff is?!
+		#q = re.compile(" Sent to")
+		#for m in q.finditer(date_of_report):
+			#a = m.start()
+			#date_of_report = date_of_report[:a]
 
 		#description is easy to identify specifically through the html tags
 		description = content("div.problem-header div.moderate-display p").text()
@@ -188,11 +176,13 @@ while counter < lastreportID+1:
 		#sys.exit()
 		#work out status
 		status = content("div.content div.banner p").text()
+		if status is "":
+			status = 0
 		print "\n\n STATUS: %r \n\n" % (status)
 		print status
 
 
-		data = [report_id, report_url, report_title, report_method, category, latitude, longitude, time_of_report, day_of_report, date_of_report, user, council, description, status]
+		data = [report_id, report_url, report_title, report_method, category, latitude, longitude, date, user, council, description, status]
 		#print data
 		update_csv.writerow(data)
 		print data
