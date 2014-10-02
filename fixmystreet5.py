@@ -39,6 +39,7 @@ update_csv = csv.writer(target)
 
 
 #while loop to keep looping until we reach the ID of the last reported hazard
+#currently the code can't handle reports from the last week without a full date and will fail once it reaches these reports
 while counter < lastreportID+1:
 	#pad reportid with 0s up to 6 digits for making the URL
 	currentreportid= str(counter).zfill(6)
@@ -46,22 +47,22 @@ while counter < lastreportID+1:
 	report_url = url
 	report_id = currentreportid
 
-	#Now let's get the title of the report...
+	#Get report title
 	response = requests.get(report_url)
-
-	#.text() prints the text only, without html tags, we know h1 is the title from inspection
 	content = pq(response.content)
 	print report_id
-	#add to report titles csv
 	report_title = content('h1').text()
 	print report_title
+
+	#writing a report generates a report id, some are not submitted so the report does not exist
+	#if the report exists, go through the code, otherwise loop to the next report id
 	if report_title != "Page Not Found":
 		#searching for tag.class on the page and pulls text only, need to search text to pick out council later
 		council = content("small.council_sent_info").text()
 		council = council.replace("Sent to ", "")
 		print council
 		#find where digits start appearing, i.e., the time that we want to cut off
-		#finditer should find the first instance, findall would find them all
+		#finditer in a loop will find all instances of a digit occuring
 		x = re.search("\d", council)
 		print x
 		p = re.compile("\d")
@@ -73,18 +74,18 @@ while counter < lastreportID+1:
 
 		#getting category, user and date!
 		#these are all within the same tag, so we use regular expressions to pick out the bits we want
-		#the category_user_date is not the same for all records, need to work out how to deal with lack of category or inclusion of report method
-		#the latest records may begin with the method of reporting, such as "via iOS", we can determine if a report contains this by searching the start of the string to decide how to split it
 		method_category_user_date = content("em").text()
 		category_user_date = method_category_user_date
-		#delcare outside loops
-		#add if statement to decide how the line should be dealt with, needs boolean test of regexp
+
+		#some reports do not have a category, these are dealt with differently in the else
 		q = re.compile("category")
 		if q.search(method_category_user_date) is not None:
 
+			#more recent reports may be submitted via an app so will have method additionally in the title
+			#method needs to be removed before the category can be extracted
 			q = re.compile("Reported via")
 			if q.search(method_category_user_date) is not None:
-				#Need to break up method and category
+				
 				#Method will be sandwiched between "reported via" and "in the"
 				method_category_user_date = method_category_user_date.replace("Reported via ", "")
 				q = re.compile(" in the ")
@@ -94,10 +95,7 @@ while counter < lastreportID+1:
 					report_method = method_category_user_date[:a]
 
 			else:
-			
-			#if it doesn't have a method, there's also a chance it doesn't have a category 
-
-			
+		
 				#if there is only a category, user and date...
 				report_method = 0
 				category_user_date = category_user_date.replace("Reported in the ", "")
@@ -139,18 +137,11 @@ while counter < lastreportID+1:
 			a = m.start()
 			date = date[:a+4]
 			#have date!
-		#should now be able to break down the dates in the same way
-		#try breaking down the date and time using dateutil
+		#break down date using dateutil
+		#won't work on last week of reocrds as they have only a day of the week but these are not essential
 		print "date before parsing: %r" % date
 		date = parser.parse(date)
 		print date
-
-		
-		#dunno what this sent to stuff is?!
-		#q = re.compile(" Sent to")
-		#for m in q.finditer(date_of_report):
-			#a = m.start()
-			#date_of_report = date_of_report[:a]
 
 		#description is easy to identify specifically through the html tags
 		description = content("div.problem-header div.moderate-display p").text()
