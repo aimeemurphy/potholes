@@ -36,6 +36,9 @@ print "The most recent hazard report ID is ID %r at link %r" % (lastreportID, so
 #ee ex16 for making csv 'a' append 'wb' open as empty file and start writing
 target = open('hazard_reports1.csv', 'wb')
 update_csv = csv.writer(target)
+#need to write header row
+a = "report_id report_url report_title report_method category latitude longitude date user council description status"
+update_csv.writerow(a.split())
 
 
 #while loop to keep looping until we reach the ID of the last reported hazard
@@ -93,6 +96,8 @@ while counter < lastreportID+1:
 					a = m.start()
 					category_user_date = method_category_user_date[a+8:]
 					report_method = method_category_user_date[:a]
+					user = category_user_date
+					print "user...... %r" % user
 
 			else:
 		
@@ -100,16 +105,16 @@ while counter < lastreportID+1:
 				report_method = 0
 				category_user_date = category_user_date.replace("Reported in the ", "")
 
-				q = re.compile("category")
-				for m in q.finditer(category_user_date):
-					a = m.start()
-					user = category_user_date[a+9:]
-					category = category_user_date[:a-1]
-					#print method
-					#print category
-					#print user
-				date_of_report = user
-				print "category a.... %r" % a 
+			q = re.compile("category")
+			for m in q.finditer(category_user_date):
+				a = m.start()
+				user = category_user_date[a+9:]
+				category = category_user_date[:a-1]
+				#print method
+				#print category
+				#print user
+			date_of_report = user
+			print "category a.... %r" % a 
 
 		else:
 			report_method = 0
@@ -125,7 +130,7 @@ while counter < lastreportID+1:
 			user = "anonymously"
 			#have date!			
 		else:
-			user = user.replace("By ","")
+			user = user.replace("by ","")
 			date = user
 			q = re.compile("\d\d:\d\d")
 			for m in q.finditer(user):
