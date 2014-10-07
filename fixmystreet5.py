@@ -34,7 +34,7 @@ print "The most recent hazard report ID is ID %r at link %r" % (lastreportID, so
 
 #open files to print to once, outside of loop
 #ee ex16 for making csv 'a' append 'wb' open as empty file and start writing
-target = open('hazard_reports1.csv', 'wb')
+target = open('hazard_reports1.csv', 'a')
 update_csv = csv.writer(target)
 #need to write header row
 a = "report_id report_url report_title report_method category latitude longitude date user council description status"
@@ -84,10 +84,14 @@ while counter < lastreportID+1:
 		q = re.compile("category")
 		if q.search(method_category_user_date) is not None:
 
+#IF THERE IS A CATEGORY		
+			
 			#more recent reports may be submitted via an app so will have method additionally in the title
 			#method needs to be removed before the category can be extracted
 			q = re.compile("Reported via")
 			if q.search(method_category_user_date) is not None:
+
+#IF THERE IS A CATEGORY AND METHOD				
 				
 				#Method will be sandwiched between "reported via" and "in the"
 				method_category_user_date = method_category_user_date.replace("Reported via ", "")
@@ -99,11 +103,14 @@ while counter < lastreportID+1:
 					user = category_user_date
 					print "user...... %r" % user
 
+
 			else:
 		
 				#if there is only a category, user and date...
 				report_method = 0
 				category_user_date = category_user_date.replace("Reported in the ", "")
+
+#WORKING OUT CATEGORY
 
 			q = re.compile("category")
 			for m in q.finditer(category_user_date):
@@ -116,27 +123,88 @@ while counter < lastreportID+1:
 			date_of_report = user
 			print "category a.... %r" % a 
 
+#IF THERE IS A CATEGORY, METHOD/NOMETHOD, ANONYMOUS/USER
+
+			q = re.compile("anonymously")
+			if q.search(user) is not None:
+				date = user.replace("anonymously at ", "")
+				user = "anonymously"
+						
+			else:
+				user = user.replace("by ","")
+				date = user
+				q = re.compile("\d\d:\d\d")
+				for m in q.finditer(user):
+					a = m.start()
+					date = user[a:]
+					user = user[:a-4]
+
+#IF THERE IS NO CATEGORY
+
 		else:
-			report_method = 0
 			category = 0
-			user = method_category_user_date.replace("Reported ", "")
+
+#IF THERE IS NO CATEGORY BUT A METHOD
+
+			q = re.compile("Reported via")
+			if q.search(method_category_user_date) is not None:
+				method_category_user_date = method_category_user_date.replace("Reported via", "")
+				p = re.compile("anonymously")
+
+#NO CATEGORY, METHOD AND ANONYMOUS
+
+				if p.search(method_category_user_date) is not None:
+					p = re.compile("anonymously")
+					for m in p.finditer(method_category_user_date):
+						a = m.start()
+						report_method = method_category_user_date[1:a-1]
+						user = method_category_user_date[a:a+11]
+						date = method_category_user_date[a+16:]
+						print "report_method: %r \n user: %r" % (report_method, user)
+						print date 
+
+#NO CATEGORY, METHOD, USER
+				else:
+					user = user.replace("by ","")
+					date = user
+					q = re.compile("\d\d:\d\d")
+					for m in q.finditer(user):
+						a = m.start()
+						date = user[a:]
+						user = user[:a-4]
+						user = user.encode("utf-8")
+#NO CATEGORY, NO METHOD, USER/NOUSER
+
+			else:
+				report_method = 0
+				category = 0
+				user = method_category_user_date
+				q = re.compile("anonymously")
+				if q.search(user) is not None:
+					p = re.compile("anonymously")
+					for m in p.finditer(user):
+						a = m.start()
+						date = user[a+16:]
+						user = "anonymously"
+				else:
+					p = re.compile("Reported by ")
+					for m in p.finditer(user):
+						a = m.start()
+						q = re.compile("\d\d:\d\d")
+						for m in q.finditer(user):
+							b = m.start()
+							date = user [b:]
+							user = user[a+1:b-2]
+
 
 
 		#now take out user and date
 		#need to deal with user differently if it's anonymous, much like method...
-		q = re.compile("anonymously")
-		if q.search(user) is not None:
-			date = user.replace("anonymously at ", "")
-			user = "anonymously"
-			#have date!			
-		else:
-			user = user.replace("by ","")
-			date = user
-			q = re.compile("\d\d:\d\d")
-			for m in q.finditer(user):
-				a = m.start()
-				date = user[a:]
-				user = user[:a-4]
+		#encode("utf-8") is used to deal with special characters such as accents or pound sign
+		
+		print "method: %r \n category: %r \n user: %r \n date so far: %r" % (report_method, category, user, date)
+				
+		user = user.encode("utf-8")
 		q = re.compile("\d\d\d\d")
 		for m in q.finditer(date):
 			a = m.start()
@@ -150,6 +218,7 @@ while counter < lastreportID+1:
 
 		#description is easy to identify specifically through the html tags
 		description = content("div.problem-header div.moderate-display p").text()
+		description = description.encode("utf-8")
 
 		#now to get the location of the fault. pulling lat long from the link looks to be the best way to do this
 		location = content("div.shadow-wrap ul li a.chevron").attr('href')
