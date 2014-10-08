@@ -56,6 +56,7 @@ while counter < lastreportID+1:
 	print report_id
 	report_title = content('h1').text()
 	print report_title
+	report_title = report_title.encode("utf-8")
 
 	#writing a report generates a report id, some are not submitted so the report does not exist
 	#if the report exists, go through the code, otherwise loop to the next report id
