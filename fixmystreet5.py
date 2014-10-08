@@ -148,10 +148,10 @@ while counter < lastreportID+1:
 
 			q = re.compile("Reported via")
 			if q.search(method_category_user_date) is not None:
-				method_category_user_date = method_category_user_date.replace("Reported via", "")
+				method_category_user_date = method_category_user_date.replace("Reported via", "")	
 				p = re.compile("anonymously")
 
-#NO CATEGORY, METHOD AND ANONYMOUS
+#no category, method, anonymous
 
 				if p.search(method_category_user_date) is not None:
 					p = re.compile("anonymously")
@@ -165,8 +165,12 @@ while counter < lastreportID+1:
 
 #NO CATEGORY, METHOD, USER
 				else:
-					user = user.replace("by ","")
-					date = user
+
+					p = re.compile (" by ")
+					for m in p.finditer(method_category_user_date):
+						a = m.start()
+						report_method = method_category_user_date[:a-2]
+						user = method_category_user_date[a+4:]
 					q = re.compile("\d\d:\d\d")
 					for m in q.finditer(user):
 						a = m.start()
@@ -197,9 +201,6 @@ while counter < lastreportID+1:
 							user = user[a+1:b-2]
 
 
-
-		#now take out user and date
-		#need to deal with user differently if it's anonymous, much like method...
 		#encode("utf-8") is used to deal with special characters such as accents or pound sign
 		
 		print "method: %r \n category: %r \n user: %r \n date so far: %r" % (report_method, category, user, date)
